@@ -27,7 +27,7 @@ Before starting, make sure the following are installed:
    ```
 
 2. **Setup configuration:**
-   - Edit the `config.yaml` file to include your Cloudflare credentials and other settings:
+   Edit the `config.yaml` file to include your Cloudflare credentials and other settings:
      ```yaml
      CLOUDFLARE:
        API_KEY: "<Your Cloudflare API Key>"
