@@ -1,0 +1,12 @@
+services:
+    agent:
+        container_name: noattack_agent
+        build: .
+        network_mode: host
+        volumes:
+            - .:/app
+
+    redis:
+        container_name: noattack_redis
+        image: redis
+        restart: always
