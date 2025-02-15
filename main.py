@@ -35,63 +35,65 @@ async def main():
         exit(1)
 
     while True:
-        mb_received_per_sec, mb_sent_per_sec = get_network_speed()
-        print(f"{PREFIX}Received: {mb_received_per_sec:.2f} MB/s, Sent: {mb_sent_per_sec:.2f} MB/s")
+        try:
+            mb_received_per_sec, mb_sent_per_sec = get_network_speed()
+            print(f"{PREFIX}Received: {mb_received_per_sec:.2f} MB/s, Sent: {mb_sent_per_sec:.2f} MB/s")
 
-        if mb_received_per_sec > config.get("SETTINGS", "MAX_INCOMING_TRAFFIC_MB"):
-            print(f"{PREFIX}Incoming traffic exceeded {config.get('SETTINGS', 'MAX_INCOMING_TRAFFIC_MB')} MB/s")
+            if mb_received_per_sec > config.get("SETTINGS", "MAX_INCOMING_TRAFFIC_MB"):
+                print(f"{PREFIX}Incoming traffic exceeded {config.get('SETTINGS', 'MAX_INCOMING_TRAFFIC_MB')} MB/s")
 
-            for zone_id in config.get("CLOUDFLARE", "ZONE_IDS"):
-                zone = await cloudflare.getZone(zone_id)
-                zone_name = zone["result"]["name"]
+                for zone_id in config.get("CLOUDFLARE", "ZONE_IDS"):
+                    try:
+                        zone = await cloudflare.getZone(zone_id)
+                        zone_name = zone["result"]["name"]
 
-                under_attack_mode = await cloudflare.getZoneUnderAttack(zone_id)
-                if under_attack_mode["result"]["value"] == "under_attack":
-                    continue
+                        under_attack_mode = await cloudflare.getZoneUnderAttack(zone_id)
+                        if under_attack_mode["result"]["value"] == "under_attack":
+                            continue
 
-                print(f"{PREFIX}Activating Under Attack Mode for {zone_name}")
+                        print(f"{PREFIX}Activating Under Attack Mode for {zone_name}")
 
-                if config.get("SETTINGS", "LOGGING") and config.get("SETTINGS", "WEBHOOK"):
-                    await webhook.send(
-                        message=f"Activating Under Attack Mode for {zone_name}",
-                        color=0xFF0000
-                    )
+                        if config.get("SETTINGS", "LOGGING") and config.get("SETTINGS", "WEBHOOK"):
+                            await webhook.send(
+                                message=f"Activating Under Attack Mode for {zone_name}",
+                                color=0xFF0000
+                            )
 
-                await cloudflare.setZoneUnderAttack(
-                    zone_id,
-                    True
-                )
+                        await cloudflare.setZoneUnderAttack(zone_id, True)
 
-        if mb_received_per_sec < config.get("SETTINGS", "MAX_INCOMING_TRAFFIC_MB"):
-            print(f"{PREFIX}Incoming traffic is normal.")
-            for zone_id in config.get("CLOUDFLARE", "ZONE_IDS"):
-                zone = await cloudflare.getZone(zone_id)
-                zone_name = zone["result"]["name"]
+                    except Exception as e:
+                        print(f"{PREFIX}Error handling Cloudflare zone {zone_id}: {e}")
 
-                under_attack_mode = await cloudflare.getZoneUnderAttack(zone_id)
-                if under_attack_mode["result"]["value"] == "essentially_off":
-                    continue
+            else:
+                print(f"{PREFIX}Incoming traffic is normal.")
+                for zone_id in config.get("CLOUDFLARE", "ZONE_IDS"):
+                    try:
+                        zone = await cloudflare.getZone(zone_id)
+                        zone_name = zone["result"]["name"]
 
-                print(f"{PREFIX}Deactivating Under Attack Mode for {zone_name}")
+                        under_attack_mode = await cloudflare.getZoneUnderAttack(zone_id)
+                        if under_attack_mode["result"]["value"] == "essentially_off":
+                            continue
 
-                if config.get("SETTINGS", "LOGGING") and config.get("SETTINGS", "WEBHOOK"):
-                    await webhook.send(
-                        message=f"Deactivating Under Attack Mode for {zone_name}",
-                        color=0x00FF00
-                    )
+                        print(f"{PREFIX}Deactivating Under Attack Mode for {zone_name}")
 
-                await cloudflare.setZoneUnderAttack(
-                    zone_id,
-                    False
-                )
+                        if config.get("SETTINGS", "LOGGING") and config.get("SETTINGS", "WEBHOOK"):
+                            await webhook.send(
+                                message=f"Deactivating Under Attack Mode for {zone_name}",
+                                color=0x00FF00
+                            )
 
-        await asyncio.sleep(
-            config.get(
-                "SETTINGS", "CHECK_INTERVAL"
-            ) if config.get(
-                "SETTINGS", "CHECK_INTERVAL"
-            ) else 60
-        )
+                        await cloudflare.setZoneUnderAttack(zone_id, False)
+
+                    except Exception as e:
+                        print(f"{PREFIX}Error processing Cloudflare zone {zone_id}: {e}")
+
+        except Exception as e:
+            print(f"{PREFIX}Error encountered in main loop: {e}")
+
+        # Sleep for interval
+        await asyncio.sleep(config.get("SETTINGS", "CHECK_INTERVAL") or 60)
+
 
 
 if __name__ == "__main__":
