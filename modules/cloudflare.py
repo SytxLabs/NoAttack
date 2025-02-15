@@ -26,7 +26,10 @@ class Cloudflare:
         url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}"
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=await self.getHeaders()) as response:
+            async with session.get(
+                    url=url,
+                    headers=await self.getHeaders()
+            ) as response:
                 return await response.json()
 
     async def getZoneUnderAttack(self, zone_id: str) -> dict:
@@ -38,7 +41,10 @@ class Cloudflare:
         url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/settings/security_level"
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=await self.getHeaders()) as response:
+            async with session.get(
+                    url=url,
+                    headers=await self.getHeaders()
+            ) as response:
                 return await response.json()
 
     async def setZoneUnderAttack(self, zone_id: str, mode: bool) -> dict:
@@ -54,5 +60,9 @@ class Cloudflare:
         }
 
         async with aiohttp.ClientSession() as session:
-            async with session.patch(url, headers=await self.getHeaders(), json=data) as response:
+            async with session.patch(
+                    url=url,
+                    headers=await self.getHeaders(),
+                    json=data
+            ) as response:
                 return await response.json()

@@ -21,5 +21,8 @@ class Webhook:
 
         webhook_url = self.config.get("SETTINGS", "WEBHOOK")
         async with aiohttp.ClientSession() as session:
-            async with session.post(webhook_url, json=data) as resp:
+            async with session.post(
+                    url=webhook_url,
+                    json=data
+            ) as resp:
                 resp.raise_for_status()
