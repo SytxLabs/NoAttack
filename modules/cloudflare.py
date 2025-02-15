@@ -1,11 +1,11 @@
 import aiohttp
 
-from driver import Config
+from modules import config
 
 
 class Cloudflare:
     def __init__(self):
-        self.config = Config.Config()
+        self.config = config.Config()
 
     async def getHeaders(self) -> dict:
         """

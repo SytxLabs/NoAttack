@@ -5,11 +5,11 @@ import psutil
 import pyfiglet
 from colorama import Fore
 
-from driver import Config, Cloudflare, Webhook
+from modules import config, cloudflare, webhook
 
-config = Config.Config()
-cloudflare = Cloudflare.Cloudflare()
-webhook = Webhook.Webhook()
+config = config.Config()
+cloudflare = cloudflare.Cloudflare()
+webhook = webhook.Webhook()
 
 PREFIX = f"{Fore.RED}[\033[38;5;208mNoAttack{Fore.RED}]{Fore.RESET} "
 

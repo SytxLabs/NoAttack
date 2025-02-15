@@ -1,6 +1,6 @@
 from enum import Enum
 
-from config import Config
+from modules import config
 from redis import Redis as aioredis
 
 
@@ -10,10 +10,11 @@ class CacheType(Enum):
 
 class Redis(object):
     def __init__(self):
+        self.config = config.Config()
         self.redis = aioredis.Redis(
-            host=Config.get("REDIS", "HOST"),
-            port=Config.get("REDIS", "PORT"),
-            password=Config.get("REDIS", "PASSWORD")
+            host=self.config.get("REDIS", "HOST"),
+            port=self.config.get("REDIS", "PORT"),
+            password=self.config.get("REDIS", "PASSWORD")
         )
 
     async def get(self, key: None, cacheType: CacheType) -> str | bool:
@@ -104,5 +105,4 @@ class Redis(object):
             return False
 
         for key in await self.redis.keys():
-            if key.decode('utf-8') not in self.blacklist:
-                await self.redis.delete(key.decode('utf-8'))
+            await self.redis.delete(key.decode('utf-8'))
