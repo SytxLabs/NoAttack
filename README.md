@@ -41,7 +41,8 @@ Before starting, make sure the following are installed:
        PASSWORD: "<Redis Password>"
        PORT: 6379
      SETTINGS:
-       CHECK_INTERVAL: 60   # Monitoring interval in seconds
+       CHECK_INTERVAL: 60  # Monitoring interval in seconds
+       LOGGING: true  # Enable logging
        MAX_INCOMING_TRAFFIC_MB: 50  # Maximum threshold for incoming traffic
        WEBHOOK: "<Discord Webhook URL>"
      ```
@@ -101,16 +102,17 @@ NoAttack monitors incoming network traffic and takes automated actions based on 
 
 ## Configuration Details
 
-| Key                          | Description                                                   | Example                          |
-|------------------------------|---------------------------------------------------------------|----------------------------------|
-| `SETTINGS.MAX_INCOMING_TRAFFIC_MB` | Maximum allowed incoming traffic before enabling Cloudflare's "Under Attack" mode. | `50`                            |
-| `SETTINGS.CHECK_INTERVAL`    | Time interval (in seconds) between traffic checks.            | `60`                            |
-| `SETTINGS.WEBHOOK`           | Discord webhook URL for notifications.                       | `https://discord.com/api/...`   |
-| `CLOUDFLARE.API_KEY`         | Your Cloudflare API key.                                      | `example_cloudflare_api_key`    |
-| `CLOUDFLARE.ZONE_IDS`        | List of Cloudflare Zone IDs to manage.                       | `[zone_1_id, zone_2_id]`        |
-| `REDIS.HOST`                 | Redis host address.                                           | `127.0.0.1`                     |
-| `REDIS.PASSWORD`             | Redis password (if any).                                     | `redis_password`                |
-| `REDIS.PORT`                 | Redis port number.                                           | `6379`                          |
+| Key                                | Description                                                                        | Example                       |
+|------------------------------------|------------------------------------------------------------------------------------|-------------------------------|
+| `SETTINGS.MAX_INCOMING_TRAFFIC_MB` | Maximum allowed incoming traffic before enabling Cloudflare's "Under Attack" mode. | `50`                          |
+| `SETTINGS.CHECK_INTERVAL`          | Time interval (in seconds) between traffic checks.                                 | `60`                          |
+| `SETTINGS.WEBHOOK`                 | Discord webhook URL for notifications.                                             | `https://discord.com/api/...` |
+| `SETTINGS.LOGGING`                 | Allow to send notifications to Discord                                             | `true`                        |
+| `CLOUDFLARE.API_KEY`               | Your Cloudflare API key.                                                           | `example_cloudflare_api_key`  |
+| `CLOUDFLARE.ZONE_IDS`              | List of Cloudflare Zone IDs to manage.                                             | `[zone_1_id, zone_2_id]`      |
+| `REDIS.HOST`                       | Redis host address.                                                                | `127.0.0.1`                   |
+| `REDIS.PASSWORD`                   | Redis password (if any).                                                           | `redis_password`              |
+| `REDIS.PORT`                       | Redis port number.                                                                 | `6379`                        |
 
 ---
 

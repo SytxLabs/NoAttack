@@ -7,7 +7,7 @@ class Config:
         self.config_data = {
             "SETTINGS": {
                 "MAX_INCOMING_TRAFFIC_MB": 50,
-                "LOG": True,
+                "LOGGING": True,
                 "WEBHOOK": "",
                 "CHECK_INTERVAL": 60
             },

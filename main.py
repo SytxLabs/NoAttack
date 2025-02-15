@@ -51,10 +51,11 @@ async def main():
 
                 print(f"{PREFIX}Activating Under Attack Mode for {zone_name}")
 
-                await webhook.send(
-                    message=f"Activating Under Attack Mode for {zone_name}",
-                    color=0xFF0000
-                )
+                if config.get("SETTINGS", "LOGGING") and config.get("SETTINGS", "WEBHOOK"):
+                    await webhook.send(
+                        message=f"Activating Under Attack Mode for {zone_name}",
+                        color=0xFF0000
+                    )
 
                 await cloudflare.setZoneUnderAttack(
                     zone_id,
@@ -73,10 +74,11 @@ async def main():
 
                 print(f"{PREFIX}Deactivating Under Attack Mode for {zone_name}")
 
-                await webhook.send(
-                    message=f"Deactivating Under Attack Mode for {zone_name}",
-                    color=0x00FF00
-                )
+                if config.get("SETTINGS", "LOGGING") and config.get("SETTINGS", "WEBHOOK"):
+                    await webhook.send(
+                        message=f"Deactivating Under Attack Mode for {zone_name}",
+                        color=0x00FF00
+                    )
 
                 await cloudflare.setZoneUnderAttack(
                     zone_id,
