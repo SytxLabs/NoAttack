@@ -138,3 +138,6 @@ For development purposes:
 1. **Cloudflare API Errors:**
    - Ensure your API key and Zone IDs are correct in `config.yaml`.
    - Verify your internet connection.
+
+## Credits
+The idea for this project was inspired by [guidedhacking](https://github.com/guidedhacking/cfautouam).
