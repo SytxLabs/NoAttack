@@ -25,12 +25,16 @@ class Cloudflare:
         """
         url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}"
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                    url=url,
-                    headers=await self.getHeaders()
-            ) as response:
-                return await response.json()
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                        url=url,
+                        headers=await self.getHeaders()
+                ) as response:
+                    return await response.json()
+        except aiohttp.client.ClientConnectorDNSError:
+            raise Exception("Failed to connect to Cloudflare API")
+            return False
 
     async def getZoneUnderAttack(self, zone_id: str) -> dict:
         """
@@ -40,12 +44,16 @@ class Cloudflare:
         """
         url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/settings/security_level"
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                    url=url,
-                    headers=await self.getHeaders()
-            ) as response:
-                return await response.json()
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                        url=url,
+                        headers=await self.getHeaders()
+                ) as response:
+                    return await response.json()
+        except aiohttp.client.ClientConnectorDNSError:
+            raise Exception("Failed to connect to Cloudflare API")
+            return False
 
     async def setZoneUnderAttack(self, zone_id: str, mode: bool) -> dict:
         """
@@ -59,10 +67,14 @@ class Cloudflare:
             "value": "under_attack" if mode else "essentially_off"
         }
 
-        async with aiohttp.ClientSession() as session:
-            async with session.patch(
-                    url=url,
-                    headers=await self.getHeaders(),
-                    json=data
-            ) as response:
-                return await response.json()
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.patch(
+                        url=url,
+                        headers=await self.getHeaders(),
+                        json=data
+                ) as response:
+                    return await response.json()
+        except aiohttp.client.ClientConnectorDNSError:
+            raise Exception("Failed to connect to Cloudflare API")
+            return False
