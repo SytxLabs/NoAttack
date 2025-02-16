@@ -92,7 +92,7 @@ NoAttack monitors incoming network traffic and takes automated actions based on 
   ```
 
 ### Logs
-- If logging is enabled (`SETTINGS.LOG: true`), network activity and Cloudflare actions will be printed in the console.
+- If logging is enabled (`SETTINGS.LOGGING: true`), the application will send notifications to the Discord webhook.
 
 ### Additional Notes
 - **Redis Integration:** Used for caching to optimize performance.
