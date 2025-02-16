@@ -8,6 +8,11 @@ class Webhook:
         self.config = config.Config()
 
     async def send(self, message: str, color: int = 0x00FF00):
+        """
+        Send a message to a Discord webhook.
+        :param message: The message to send.
+        :param color: The color of the message embed.
+        """
         data = {
             'username': 'NoAttack',
             'embeds': [
@@ -26,3 +31,10 @@ class Webhook:
                     json=data
             ) as resp:
                 resp.raise_for_status()
+
+    def get_webhook_url(self) -> str:
+        """
+        Get the webhook URL from the config.
+        :return:
+        """
+        return self.config.get("SETTINGS", "WEBHOOK")

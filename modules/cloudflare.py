@@ -7,21 +7,21 @@ class Cloudflare:
     def __init__(self):
         self.config = config.Config()
 
-    async def getHeaders(self) -> dict:
+    async def get_header(self) -> dict:
         """
-        Get headers for Cloudflare API
-        :return:
+        Get headers for Cloudflare API.
+        :return: A dictionary containing the headers.
         """
         return {
             "Authorization": f"Bearer {self.config.get('CLOUDFLARE', 'API_KEY')}",
             "Content-Type": "application/json"
         }
 
-    async def getZone(self, zone_id: str) -> dict:
+    async def get_zone(self, zone_id: str) -> dict:
         """
-        Get a zone from Cloudflare
-        :param zone_id:
-        :return:
+        Get a zone from Cloudflare.
+        :param zone_id: The ID of the zone.
+        :return: A dictionary containing the zone information.
         """
         url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}"
 
@@ -29,18 +29,20 @@ class Cloudflare:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                         url=url,
-                        headers=await self.getHeaders()
+                        headers=await self.get_header()
                 ) as response:
                     return await response.json()
-        except aiohttp.client.ClientConnectorDNSError:
-            raise Exception("Failed to connect to Cloudflare API")
-            return False
 
-    async def getZoneUnderAttack(self, zone_id: str) -> dict:
+        except aiohttp.ClientConnectorError as e:
+            raise ConnectionError(f"Connection error: {e}") from e
+        except aiohttp.ClientResponseError as e:
+            raise ValueError(f"Response error: {e}") from e
+
+    async def get_zone_under_attack(self, zone_id: str) -> dict:
         """
-        Get a zone from Cloudflare
-        :param zone_id:
-        :return:
+        Get the security level of a zone from Cloudflare.
+        :param zone_id: The ID of the zone.
+        :return: A dictionary containing the security level information.
         """
         url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/settings/security_level"
 
@@ -48,19 +50,22 @@ class Cloudflare:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                         url=url,
-                        headers=await self.getHeaders()
+                        headers=await self.get_header()
                 ) as response:
                     return await response.json()
-        except aiohttp.client.ClientConnectorDNSError:
-            raise Exception("Failed to connect to Cloudflare API")
-            return False
 
-    async def setZoneUnderAttack(self, zone_id: str, mode: bool) -> dict:
+        except aiohttp.ClientConnectorError as e:
+            raise ConnectionError(f"Connection error: {e}") from e
+
+        except aiohttp.ClientResponseError as e:
+            raise ValueError(f"Response error: {e}") from e
+
+    async def set_zone_under_attack(self, zone_id: str, mode: bool) -> dict:
         """
-        Set a zone under attack mode
-        :param zone_id:
-        :param mode:
-        :return:
+        Set a zone under attack mode.
+        :param zone_id: The ID of the zone.
+        :param mode: True to enable under attack mode, False to disable.
+        :return: A dictionary containing the response from Cloudflare.
         """
         url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/settings/security_level"
         data = {
@@ -71,10 +76,13 @@ class Cloudflare:
             async with aiohttp.ClientSession() as session:
                 async with session.patch(
                         url=url,
-                        headers=await self.getHeaders(),
+                        headers=await self.get_header(),
                         json=data
                 ) as response:
                     return await response.json()
-        except aiohttp.client.ClientConnectorDNSError:
-            raise Exception("Failed to connect to Cloudflare API")
-            return False
+
+        except aiohttp.ClientConnectorError as e:
+            raise ConnectionError(f"Connection error: {e}") from e
+
+        except aiohttp.ClientResponseError as e:
+            raise ValueError(f"Response error: {e}") from e
