@@ -7,8 +7,7 @@ from modules import config
 
 
 class CacheType(Enum):
-    pass
-
+    UNDER_ATTACK = "under_attack"
 
 class RedisCache:
 
@@ -34,19 +33,20 @@ class RedisCache:
         data = await self.redis.get(query)
         return data.decode('utf-8') if data else None
 
-    async def set(self, key: str | None, value: str, cache_type: CacheType) -> bool:
+    async def set(self, key: str | None, value: str, cache_type: CacheType, ttl: int = 300) -> bool:
         """
-        Set a value in the cache.
+        Set a value in the cache with an optional TTL.
         :param key: The key to set (or None).
         :param value: The value to store.
         :param cache_type: The type of cache (Enum).
+        :param ttl: Time-to-live in seconds.
         :return: True if successful, False on connection error.
         """
         if not await self.check():
             return False
 
         query = f"{cache_type.value}" if key is None else f"{key}:{cache_type.value}"
-        return await self.redis.set(query, value)
+        return await self.redis.set(query, value, ex=ttl)
 
     async def exists(self, key: str | None, cache_type: CacheType) -> bool:
         """
@@ -97,3 +97,23 @@ class RedisCache:
         for k in keys:
             await self.redis.delete(k)
         return True
+
+    async def set_under_attack(self):
+        """
+        Set the 'Under Attack' status in Redis for 5 minutes.
+        """
+        await self.set("under_attack", "True", CacheType.UNDER_ATTACK, ttl=300)
+
+    async def clear_under_attack(self):
+        """
+        Clear the 'Under Attack' status in Redis.
+        """
+        await self.delete("under_attack", CacheType.UNDER_ATTACK)
+
+    async def is_under_attack(self) -> bool:
+        """
+        Check if the site is under attack.
+        :return: True, if under attack, False otherwise.
+        """
+        value = await self.get("under_attack", CacheType.UNDER_ATTACK)
+        return value == "True"

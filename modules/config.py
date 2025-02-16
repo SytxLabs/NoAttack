@@ -1,6 +1,5 @@
 import yaml
 
-
 class Config:
     def __init__(self):
         self.config = "config.yaml"
@@ -17,11 +16,13 @@ class Config:
                 "ZONE_IDS": []
             },
             "REDIS": {
-                "HOST": "",
+                "HOST": "redis",
                 "PORT": 6379,
                 "PASSWORD": ""
             },
         }
+        if not self.config_exists():
+            self.create_config()
 
     def get(self, section: str, key: str) -> str:
         """

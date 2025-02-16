@@ -7,11 +7,12 @@ import psutil
 import pyfiglet
 from colorama import Fore
 
-from modules import cloudflare, config, webhook
+from modules import cloudflare, config, webhook, redis
 
 config = config.Config()
 cloudflare = cloudflare.Cloudflare()
 webhook = webhook.Webhook()
+redis = redis.RedisCache()
 
 PREFIX = f"{Fore.RED}[\033[38;5;208mNoAttack{Fore.RED}]{Fore.RESET} "
 
@@ -42,23 +43,38 @@ async def main():
         print(f"{PREFIX}No Cloudflare zones found.")
         sys.exit(1)
 
+    if await redis.check():
+        print(f"{PREFIX}Connected to Redis.")
+    else:
+        print(f"{PREFIX}Failed to connect to Redis.")
+        sys.exit(1)
+
     while True:
         try:
-            mb_received_per_sec, mb_sent_per_sec = get_network_speed()
-            print(f"{PREFIX}Received: {mb_received_per_sec:.2f} MB/s, "
-                  f"Sent: {mb_sent_per_sec:.2f} MB/s")
-
-            if mb_received_per_sec > config.get("SETTINGS", "MAX_INCOMING_TRAFFIC_MB"):
-                print(f"{PREFIX}Incoming traffic exceeded "
-                      f"{config.get('SETTINGS', 'MAX_INCOMING_TRAFFIC_MB')} MB/s")
-
-                for zone_id in config.get("CLOUDFLARE", "ZONE_IDS"):
-                    await handle_zone(zone_id, True)
-
+            if await redis.is_under_attack():
+                print(f"{PREFIX}Under Attack mode is active.")
             else:
-                print(f"{PREFIX}Incoming traffic is normal.")
-                for zone_id in config.get("CLOUDFLARE", "ZONE_IDS"):
-                    await handle_zone(zone_id, False)
+                mb_received_per_sec, mb_sent_per_sec = get_network_speed()
+                print(
+                    f"{PREFIX}Received: {mb_received_per_sec:.2f} MB/s, "
+                    f"Sent: {mb_sent_per_sec:.2f} MB/s"
+                )
+
+                if mb_received_per_sec > config.get("SETTINGS", "MAX_INCOMING_TRAFFIC_MB"):
+                    print(
+                        f"{PREFIX}Incoming traffic exceeded "
+                        f"{config.get('SETTINGS', 'MAX_INCOMING_TRAFFIC_MB')} MB/s"
+                    )
+
+                    for zone_id in config.get("CLOUDFLARE", "ZONE_IDS"):
+                        await handle_zone(zone_id, True)
+
+                    await redis.set_under_attack()
+
+                else:
+                    print(f"{PREFIX}Incoming traffic is normal.")
+                    for zone_id in config.get("CLOUDFLARE", "ZONE_IDS"):
+                        await handle_zone(zone_id, False)
 
         except (aiohttp.ClientError, ValueError) as e:
             print(f"{PREFIX}Error encountered in main loop: {e}")

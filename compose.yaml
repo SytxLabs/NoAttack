@@ -1,12 +1,21 @@
 services:
-    agent:
-        container_name: noattack_agent
-        build: .
-        network_mode: host
-        volumes:
-            - .:/app
+  agent:
+    container_name: noattack_agent
+    build: .
+    depends_on:
+      - redis
+    networks:
+      - noattack_network
+    volumes:
+      - .:/app
 
-    redis:
-        container_name: noattack_redis
-        image: redis
-        restart: always
+  redis:
+    container_name: noattack_redis
+    image: redis
+    restart: always
+    networks:
+      - noattack_network
+
+networks:
+  noattack_network:
+    driver: bridge
