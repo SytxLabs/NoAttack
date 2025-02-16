@@ -16,7 +16,7 @@ class Config:
                 "ZONE_IDS": []
             },
             "REDIS": {
-                "HOST": "redis",
+                "HOST": "localhost",
                 "PORT": 6379,
                 "PASSWORD": ""
             },

@@ -4,8 +4,7 @@ services:
     build: .
     depends_on:
       - redis
-    networks:
-      - noattack_network
+    network_mode: host
     volumes:
       - .:/app
 
@@ -13,9 +12,5 @@ services:
     container_name: noattack_redis
     image: redis
     restart: always
-    networks:
-      - noattack_network
-
-networks:
-  noattack_network:
-    driver: bridge
+    ports:
+      - "6379:6379"
