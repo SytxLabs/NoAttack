@@ -1,143 +1,85 @@
 # NoAttack
 
-NoAttack is a tool designed to monitor incoming network traffic and automatically enable or disable Cloudflare's "Under Attack" mode based on defined thresholds. It integrates various components, including Redis, Cloudflare, and a Discord Webhook for notification purposes.
+NoAttack monitors incoming network traffic and automatically toggles Cloudflare's "Under Attack" mode when traffic exceeds a defined threshold. Notifications are sent via Discord webhook.
 
 ---
 
 ## Features
-- Monitors incoming network traffic in real time.
-- Automatically enables "Under Attack" mode in Cloudflare when traffic exceeds a predefined threshold.
-- Sends alerts via a Discord webhook during critical events.
-- Includes Redis for caching operations.
+
+- Monitors incoming and outgoing traffic in real time
+- Automatically enables "Under Attack" mode when traffic exceeds `MAX_INCOMING_TRAFFIC_MB`
+- 5-minute cooldown after activation (configurable via `ATTACK_COOLDOWN_TTL`)
+- Sends Discord notifications on mode changes
+- Redis for cooldown state management
 
 ---
 
-## Installation
+## Requirements
 
-### Requirements
-Before starting, make sure the following are installed:
-- **Docker** and **Docker Compose**
-- **Python 3.12** or later (if not using Docker Compose)
+- **Docker & Docker Compose** (recommended)
+- **Python 3.12+** (for local usage)
 
-### Steps
-1. **Clone the repository:**
+---
+
+## Setup
+
+1. Clone the repository:
    ```bash
    git clone https://github.com/SytxLabs/NoAttack.git
    cd NoAttack
    ```
 
-2. **Setup configuration:**
-   Edit the `config.yaml` file to include your Cloudflare credentials and other settings:
-     ```yaml
-     CLOUDFLARE:
-       API_KEY: "<Your Cloudflare API Key>"
-       EMAIL: "<Your Email Address>"
-       ZONE_IDS: [
-         "<Zone ID 1>",
-         "<Zone ID 2>"
-       ]
-     REDIS:
-       HOST: "<Redis Host>"
-       PASSWORD: "<Redis Password>"
-       PORT: 6379
-     SETTINGS:
-       CHECK_INTERVAL: 60  # Monitoring interval in seconds
-       LOGGING: true  # Enable logging
-       MAX_INCOMING_TRAFFIC_MB: 50  # Maximum threshold for incoming traffic
-       WEBHOOK: "<Discord Webhook URL>"
-     ```
+2. On first run, `config.yaml` is created automatically. Fill in your credentials:
+   ```yaml
+   CLOUDFLARE:
+     API_KEY: "<Your Cloudflare Bearer Token>"
+     EMAIL: "<Your Email>"
+     ZONE_IDS:
+       - "<Zone ID>"
 
-3. **Build and run using Docker Compose:**
-   ```bash
-   docker-compose up --build
+   REDIS:
+     HOST: localhost
+     PORT: 6379
+     PASSWORD: ""
+
+   SETTINGS:
+     CHECK_INTERVAL: 60
+     MAX_INCOMING_TRAFFIC_MB: 50
+     ATTACK_COOLDOWN_TTL: 300
+     WEBHOOK: "<Discord Webhook URL>"
+     LOGGING: true
    ```
 
-4. **Install dependencies manually (if not using Docker Compose):**
-   - Install dependencies via pip:
-     ```bash
-     pip install -r requirements.txt
-     ```
-   - Run the script:
-     ```bash
-     python main.py
-     ```
-
----
-
-## Usage
-
-NoAttack monitors incoming network traffic and takes automated actions based on the configuration.
-
-### Key Functionalities
-1. **Monitor Traffic:**
-   - Logs real-time data about incoming and outgoing traffic in MB/s.
-   
-2. **Activate Cloudflare "Under Attack" Mode:**
-   - If traffic exceeds the `MAX_INCOMING_TRAFFIC_MB` limit, Cloudflare's "Under Attack" mode is activated for all specified zones.
-
-3. **Deactivate Cloudflare "Under Attack" Mode:**
-   - When traffic drops below the threshold, the "Under Attack" mode is deactivated.
-
-4. **Notifications:**
-   - Sends real-time updates regarding the activation or deactivation of the "Under Attack" mode to the specified Discord webhook.
-
-### Running the Application
-- Simply run the application using:
-  ```bash
-  docker-compose up
-  ```
-  or
-  ```bash
-  python main.py
-  ```
-
-### Logs
-- If logging is enabled (`SETTINGS.LOGGING: true`), the application will send notifications to the Discord webhook.
-
-### Additional Notes
-- **Redis Integration:** Used for caching to optimize performance.
-- **Discord Webhook:** Sends notifications about changes to ensure visibility for administrators.
-
----
-
-## Configuration Details
-
-| Key                                | Description                                                                        | Example                       |
-|------------------------------------|------------------------------------------------------------------------------------|-------------------------------|
-| `SETTINGS.MAX_INCOMING_TRAFFIC_MB` | Maximum allowed incoming traffic before enabling Cloudflare's "Under Attack" mode. | `50`                          |
-| `SETTINGS.CHECK_INTERVAL`          | Time interval (in seconds) between traffic checks.                                 | `60`                          |
-| `SETTINGS.WEBHOOK`                 | Discord webhook URL for notifications.                                             | `https://discord.com/api/...` |
-| `SETTINGS.LOGGING`                 | Allow to send notifications to Discord                                             | `true`                        |
-| `CLOUDFLARE.API_KEY`               | Your Cloudflare API key.                                                           | `example_cloudflare_api_key`  |
-| `CLOUDFLARE.ZONE_IDS`              | List of Cloudflare Zone IDs to manage.                                             | `[zone_1_id, zone_2_id]`      |
-| `REDIS.HOST`                       | Redis host address.                                                                | `127.0.0.1`                   |
-| `REDIS.PASSWORD`                   | Redis password (if any).                                                           | `redis_password`              |
-| `REDIS.PORT`                       | Redis port number.                                                                 | `6379`                        |
-
----
-
-## Development
-
-### Docker Development
-For development purposes:
-- Add changes to the application code and rebuild the Docker container:
-  ```bash
-  docker-compose up --build
-  ```
-
-### Local Development
-- After modifying the code and or `config.yaml`, run the Python application:
+3. Run with Docker Compose:
    ```bash
+   docker compose up --build
+   ```
+
+   Or locally:
+   ```bash
+   pip install -r requirements.txt
    python main.py
    ```
 
 ---
 
-## Troubleshooting
+## Configuration
 
-1. **Cloudflare API Errors:**
-   - Ensure your API key and Zone IDs are correct in `config.yaml`.
-   - Verify your internet connection.
+| Key | Description | Default |
+|-----|-------------|---------|
+| `SETTINGS.MAX_INCOMING_TRAFFIC_MB` | Incoming traffic threshold in MB/s | `50` |
+| `SETTINGS.CHECK_INTERVAL` | Seconds between traffic checks | `60` |
+| `SETTINGS.ATTACK_COOLDOWN_TTL` | Cooldown duration in seconds after activation | `300` |
+| `SETTINGS.WEBHOOK` | Discord webhook URL for notifications | `""` |
+| `SETTINGS.LOGGING` | Enable Discord notifications | `true` |
+| `CLOUDFLARE.API_KEY` | Cloudflare Bearer token | |
+| `CLOUDFLARE.ZONE_IDS` | List of zone IDs to manage | |
+| `REDIS.HOST` | Redis host | `localhost` |
+| `REDIS.PORT` | Redis port | `6379` |
+| `REDIS.PASSWORD` | Redis password | `""` |
+
+---
 
 ## Credits
-The idea for this project was inspired by [guidedhacking](https://github.com/guidedhacking/cfautouam).
+
+Inspired by [guidedhacking/cfautouam](https://github.com/guidedhacking/cfautouam).
