@@ -1,88 +1,70 @@
+import logging
+
 import aiohttp
 
-from modules import config
+from modules.config import get_config
+
+logger = logging.getLogger("noattack.cloudflare")
 
 
 class Cloudflare:
     def __init__(self):
-        self.config = config.Config()
+        self._cfg = get_config()
+        self._session = None
 
-    async def get_header(self) -> dict:
-        """
-        Get headers for Cloudflare API.
-        :return: A dictionary containing the headers.
-        """
+    def _headers(self):
+        """Build the Cloudflare API auth headers."""
         return {
-            "Authorization": f"Bearer {self.config.get('CLOUDFLARE', 'API_KEY')}",
-            "Content-Type": "application/json"
+            "Authorization": f"Bearer {self._cfg.get('CLOUDFLARE', 'API_KEY')}",
+            "Content-Type": "application/json",
         }
 
-    async def get_zone(self, zone_id: str) -> dict:
-        """
-        Get a zone from Cloudflare.
-        :param zone_id: The ID of the zone.
-        :return: A dictionary containing the zone information.
-        """
+    async def _get_session(self):
+        """Return the shared aiohttp session, creating it if needed."""
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
+
+    async def close(self):
+        """Close the shared HTTP session."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+
+    async def get_zone(self, zone_id):
+        """Return the zone name for the given zone ID, or None on error."""
         url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}"
-
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                        url=url,
-                        headers=await self.get_header()
-                ) as response:
-                    return await response.json()
+            session = await self._get_session()
+            async with session.get(url, headers=self._headers()) as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                return data["result"]["name"]
+        except (aiohttp.ClientError, KeyError) as e:
+            logger.error("Failed to fetch zone %s: %s", zone_id, e)
+            return None
 
-        except aiohttp.ClientConnectorError as e:
-            raise ConnectionError(f"Connection error: {e}") from e
-        except aiohttp.ClientResponseError as e:
-            raise ValueError(f"Response error: {e}") from e
-
-    async def get_zone_under_attack(self, zone_id: str) -> dict:
-        """
-        Get the security level of a zone from Cloudflare.
-        :param zone_id: The ID of the zone.
-        :return: A dictionary containing the security level information.
-        """
+    async def get_zone_under_attack(self, zone_id):
+        """Return True if the zone is in under_attack mode, False if not, None on error."""
         url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/settings/security_level"
-
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                        url=url,
-                        headers=await self.get_header()
-                ) as response:
-                    return await response.json()
+            session = await self._get_session()
+            async with session.get(url, headers=self._headers()) as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                return data["result"]["value"] == "under_attack"
+        except (aiohttp.ClientError, KeyError) as e:
+            logger.error("Failed to get security level for zone %s: %s", zone_id, e)
+            return None
 
-        except aiohttp.ClientConnectorError as e:
-            raise ConnectionError(f"Connection error: {e}") from e
-
-        except aiohttp.ClientResponseError as e:
-            raise ValueError(f"Response error: {e}") from e
-
-    async def set_zone_under_attack(self, zone_id: str, mode: bool) -> dict:
-        """
-        Set a zone under attack mode.
-        :param zone_id: The ID of the zone.
-        :param mode: True to enable under attack mode, False to disable.
-        :return: A dictionary containing the response from Cloudflare.
-        """
+    async def set_zone_under_attack(self, zone_id, under_attack):
+        """Set the security level for a zone. Returns True on success."""
         url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/settings/security_level"
-        data = {
-            "value": "under_attack" if mode else "essentially_off"
-        }
-
+        payload = {"value": "under_attack" if under_attack else "essentially_off"}
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.patch(
-                        url=url,
-                        headers=await self.get_header(),
-                        json=data
-                ) as response:
-                    return await response.json()
-
-        except aiohttp.ClientConnectorError as e:
-            raise ConnectionError(f"Connection error: {e}") from e
-
-        except aiohttp.ClientResponseError as e:
-            raise ValueError(f"Response error: {e}") from e
+            session = await self._get_session()
+            async with session.patch(url, headers=self._headers(), json=payload) as resp:
+                resp.raise_for_status()
+                return True
+        except aiohttp.ClientError as e:
+            logger.error("Failed to set security level for zone %s: %s", zone_id, e)
+            return False

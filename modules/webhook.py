@@ -1,40 +1,36 @@
+import logging
+from datetime import datetime, timezone
+
 import aiohttp
 
-from modules import config
+from modules.config import get_config
+
+logger = logging.getLogger("noattack.webhook")
 
 
 class Webhook:
     def __init__(self):
-        self.config = config.Config()
+        self._cfg = get_config()
 
-    async def send(self, message: str, color: int = 0x00FF00):
-        """
-        Send a message to a Discord webhook.
-        :param message: The message to send.
-        :param color: The color of the message embed.
-        """
-        data = {
-            'username': 'NoAttack',
-            'embeds': [
-                {
-                    'title': 'NoAttack',
-                    'description': message,
-                    'color': color,
-                }
-            ]
+    async def send(self, action, zone, color=0x00FF00):
+        """Send a Discord embed notification for a zone action."""
+        url = self._cfg.get("SETTINGS", "WEBHOOK")
+        if not url:
+            return
+
+        payload = {
+            "username": "NoAttack",
+            "embeds": [{
+                "title": action,
+                "description": f"Zone: **{zone}**",
+                "color": color,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }],
         }
 
-        webhook_url = self.config.get("SETTINGS", "WEBHOOK")
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                    url=webhook_url,
-                    json=data
-            ) as resp:
-                resp.raise_for_status()
-
-    def get_webhook_url(self) -> str:
-        """
-        Get the webhook URL from the config.
-        :return:
-        """
-        return self.config.get("SETTINGS", "WEBHOOK")
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload) as resp:
+                    resp.raise_for_status()
+        except aiohttp.ClientError as e:
+            logger.error("Discord webhook failed: %s", e)

@@ -1,56 +1,62 @@
 import yaml
 
+
+class ConfigNotFoundError(Exception):
+    pass
+
+
+_DEFAULT = {
+    "SETTINGS": {
+        "MAX_INCOMING_TRAFFIC_MB": 50,
+        "LOGGING": True,
+        "WEBHOOK": "",
+        "CHECK_INTERVAL": 60,
+        "ATTACK_COOLDOWN_TTL": 300,
+    },
+    "CLOUDFLARE": {
+        "EMAIL": "cf@example.com",
+        "API_KEY": "1234567890",
+        "ZONE_IDS": [],
+    },
+    "REDIS": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "PASSWORD": "",
+    },
+}
+
+
 class Config:
     def __init__(self):
-        self.config = "config.yaml"
-        self.config_data = {
-            "SETTINGS": {
-                "MAX_INCOMING_TRAFFIC_MB": 50,
-                "LOGGING": True,
-                "WEBHOOK": "",
-                "CHECK_INTERVAL": 60
-            },
-            "CLOUDFLARE": {
-                "EMAIL": "cf@example.com",
-                "API_KEY": "1234567890",
-                "ZONE_IDS": []
-            },
-            "REDIS": {
-                "HOST": "localhost",
-                "PORT": 6379,
-                "PASSWORD": ""
-            },
-        }
-        if not self.config_exists():
-            self.create_config()
+        self._path = "config.yaml"
+        if not self._exists():
+            with open(self._path, "w", encoding="utf-8") as f:
+                yaml.dump(_DEFAULT, f)
+            raise ConfigNotFoundError(
+                "config.yaml not found – a default file has been created. "
+                "Please fill in your credentials and restart."
+            )
+        with open(self._path, "r", encoding="utf-8") as f:
+            self._data = yaml.load(f, Loader=yaml.FullLoader)
 
-    def get(self, section: str, key: str) -> str:
-        """
-        Get a value from the config file.
-        :param section: The configuration section name.
-        :param key: The key within that section.
-        :return: The corresponding value from the configuration.
-        """
-        with open(self.config, "r", encoding="utf-8") as yf:
-            data = yaml.load(yf, Loader=yaml.FullLoader)
-            return data[section][key]
+    def get(self, section, key):
+        """Return a value from the config."""
+        return self._data[section][key]
 
-    def config_exists(self) -> bool:
-        """
-        Check if the config file exists.
-        :return: True if file exists, False otherwise.
-        """
+    def _exists(self):
         try:
-            with open(self.config, "r", encoding="utf-8"):
+            with open(self._path, encoding="utf-8"):
                 return True
         except FileNotFoundError:
             return False
 
-    def create_config(self) -> bool:
-        """
-        Create a config file using the default configuration data.
-        :return: True if the config file was successfully created.
-        """
-        with open(self.config, "w", encoding="utf-8") as yf:
-            yaml.dump(self.config_data, yf)
-        return True
+
+_INSTANCE = None
+
+
+def get_config():
+    """Return the global Config singleton."""
+    global _INSTANCE  # pylint: disable=global-statement
+    if _INSTANCE is None:
+        _INSTANCE = Config()
+    return _INSTANCE
